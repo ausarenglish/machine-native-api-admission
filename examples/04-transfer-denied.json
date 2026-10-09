@@ -1,0 +1,77 @@
+{
+  "scenario": "Denial with an actionable, non-sensitive provider-policy reason",
+  "illustrative": true,
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "url": "https://admission.marketplace.example/admission-requests",
+        "headers": { "Idempotency-Key": "transfer-denial-c8f311b2", "Authorization": "(authenticated request; value omitted)" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-request.schema.json",
+          "spec_version": "0.1",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0401",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "money.transfer",
+          "requester": { "type": "organization", "id": "urn:example:organization:contoso-payments", "display_name": "Contoso Payments" },
+          "client_instance": { "type": "workload", "id": "spiffe://contoso.example/agents/payments", "key_binding": "urn:ietf:params:oauth:jwk-thumbprint:sha-256:denial-demo-key" },
+          "represented_party": { "type": "account", "id": "urn:example:marketplace-account:merchant-4099" },
+          "authorization": { "protocol": "oauth2", "scopes": ["money.transfer"], "grant_types": ["authorization_code"] },
+          "claims": { "purpose": "Merchant disbursements" },
+          "evidence": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1401",
+              "type": "urn:example:evidence:regulated-business",
+              "format": "example-regulated-business+vc",
+              "subject": "urn:example:organization:contoso-payments",
+              "issuer": "https://regulator.example.net",
+              "issued_at": "2026-10-08T12:00:00Z",
+              "expires_at": "2027-10-08T12:00:00Z",
+              "presentation": { "verifiable_presentation": "(presentation proving jurisdiction ZZ omitted)", "audience": "https://admission.marketplace.example" }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": { "Location": "https://admission.marketplace.example/admission-requests/adm_transfer_deny_01", "ETag": "\"rev-1\"" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_transfer_deny_01",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0401",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "money.transfer",
+          "revision": 1,
+          "state": "denied",
+          "decision": "DENY",
+          "created_at": "2026-10-09T17:00:01Z",
+          "updated_at": "2026-10-09T17:00:01Z",
+          "status_uri": "https://admission.marketplace.example/admission-requests/adm_transfer_deny_01",
+          "reasons": [
+            {
+              "code": "jurisdiction_not_supported",
+              "detail": "Marketplace does not offer money.transfer to businesses established in jurisdiction ZZ.",
+              "retryable": false,
+              "remediation": "Do not resubmit unchanged. If the legal establishment changes, obtain new evidence and create a new admission request."
+            }
+          ],
+          "actions": [],
+          "evidence_assessments": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1401",
+              "type": "urn:example:evidence:regulated-business",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T17:00:01Z",
+              "issuer": "https://regulator.example.net",
+              "fresh_until": "2026-10-15T17:00:01Z"
+            }
+          ],
+          "provisioning": []
+        }
+      }
+    }
+  ]
+}

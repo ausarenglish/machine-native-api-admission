@@ -1,0 +1,18 @@
+{
+  "name": "machine-native-api-admission",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Draft interoperability profile for machine-native API admission and provisioning",
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/validate.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "license": "MIT"
+}

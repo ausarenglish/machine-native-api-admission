@@ -1,0 +1,119 @@
+{
+  "scenario": "Discover marketplace admission and capability requirements",
+  "illustrative": true,
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://api.marketplace.example/.well-known/oauth-protected-resource"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "resource": "https://api.marketplace.example",
+          "authorization_servers": ["https://auth.marketplace.example"],
+          "scopes_supported": ["catalog.read", "listing.create", "money.transfer"],
+          "capability_admission_uri": "https://admission.marketplace.example/.well-known/capability-admission"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://admission.marketplace.example/.well-known/capability-admission"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json", "Cache-Control": "max-age=300" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/discovery.schema.json",
+          "spec_version": "0.1",
+          "issuer": "https://admission.marketplace.example",
+          "resource": "https://api.marketplace.example",
+          "admission_requests_endpoint": "https://admission.marketplace.example/admission-requests",
+          "readiness_endpoint": "https://admission.marketplace.example/readiness-validations",
+          "idempotency_ttl": 86400,
+          "retention_policy_uri": "https://marketplace.example/policies/admission-data",
+          "capabilities": [
+            {
+              "id": "catalog.read",
+              "description": "Read the public product catalog under application authority.",
+              "environments": ["sandbox", "production"],
+              "evidence_requirements": [
+                {
+                  "type": "urn:example:evidence:workload-attestation",
+                  "requirement": "always",
+                  "accepted_formats": ["example-key-bound-attestation+jwt"],
+                  "max_age": 300,
+                  "description": "Fresh key-bound workload identity from a trusted attester."
+                }
+              ],
+              "authorization": {
+                "protocol": "oauth2",
+                "authorization_servers": ["https://auth.marketplace.example"],
+                "scopes": ["catalog.read"],
+                "grant_types": ["client_credentials"],
+                "registration_modes": ["dynamic_client_registration"]
+              },
+              "readiness_check": "urn:example:readiness:marketplace-api"
+            },
+            {
+              "id": "listing.create",
+              "description": "Create a listing for a represented seller account.",
+              "environments": ["sandbox", "production"],
+              "evidence_requirements": [
+                {
+                  "type": "urn:example:evidence:workload-attestation",
+                  "requirement": "always",
+                  "accepted_formats": ["example-key-bound-attestation+jwt"],
+                  "max_age": 300
+                },
+                {
+                  "type": "urn:example:evidence:organization-control",
+                  "requirement": "conditional",
+                  "accepted_formats": ["example-org-control+jwt"],
+                  "max_age": 86400
+                }
+              ],
+              "authorization": {
+                "protocol": "oauth2",
+                "authorization_servers": ["https://auth.marketplace.example"],
+                "scopes": ["listing.create"],
+                "grant_types": ["authorization_code"],
+                "registration_modes": ["pre_registered", "dynamic_client_registration"]
+              },
+              "readiness_check": "urn:example:readiness:marketplace-api"
+            },
+            {
+              "id": "money.transfer",
+              "description": "Request access to initiate money transfers; individual transfers require separate authorization.",
+              "environments": ["sandbox", "production"],
+              "evidence_requirements": [
+                {
+                  "type": "urn:example:evidence:regulated-business",
+                  "requirement": "always",
+                  "accepted_formats": ["example-regulated-business+vc"],
+                  "max_age": 604800
+                },
+                {
+                  "type": "urn:example:evidence:organization-approval",
+                  "requirement": "always",
+                  "accepted_formats": ["provider-account-approval"]
+                }
+              ],
+              "authorization": {
+                "protocol": "oauth2",
+                "authorization_servers": ["https://auth.marketplace.example"],
+                "scopes": ["money.transfer"],
+                "grant_types": ["authorization_code"],
+                "registration_modes": ["manual"]
+              },
+              "readiness_check": "urn:example:readiness:marketplace-api"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

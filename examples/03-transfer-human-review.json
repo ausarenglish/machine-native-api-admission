@@ -1,0 +1,266 @@
+{
+  "scenario": "Genuine administrator approval, provider review, polling, and later resumption",
+  "illustrative": true,
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "url": "https://admission.marketplace.example/admission-requests",
+        "headers": { "Idempotency-Key": "transfer-request-97b6a45c", "Authorization": "(authenticated request; value omitted)" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-request.schema.json",
+          "spec_version": "0.1",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0301",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "money.transfer",
+          "requester": { "type": "organization", "id": "urn:example:organization:acme-market-tools", "display_name": "Acme Market Tools" },
+          "client_instance": {
+            "type": "workload",
+            "id": "spiffe://acme.example/agents/treasury-assistant",
+            "key_binding": "urn:ietf:params:oauth:jwk-thumbprint:sha-256:transfer-demo-key"
+          },
+          "represented_party": { "type": "account", "id": "urn:example:marketplace-account:merchant-3099", "display_name": "Merchant 3099" },
+          "authorization": {
+            "protocol": "oauth2",
+            "scopes": ["money.transfer"],
+            "grant_types": ["authorization_code"],
+            "authorization_details": [
+              { "type": "urn:example:authorization:transfer-initiation", "locations": ["https://api.marketplace.example"] }
+            ]
+          },
+          "claims": { "purpose": "Supplier settlement automation" },
+          "evidence": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1301",
+              "type": "urn:example:evidence:regulated-business",
+              "format": "example-regulated-business+vc",
+              "subject": "urn:example:organization:acme-market-tools",
+              "issuer": "https://regulator.example.net",
+              "issued_at": "2026-10-08T12:00:00Z",
+              "expires_at": "2027-10-08T12:00:00Z",
+              "presentation": {
+                "verifiable_presentation": "(selective-disclosure presentation omitted)",
+                "audience": "https://admission.marketplace.example",
+                "nonce": "transfer-admission-nonce-0301"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": { "Location": "https://admission.marketplace.example/admission-requests/adm_transfer_01", "ETag": "\"rev-1\"", "Retry-After": "60" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_transfer_01",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0301",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "money.transfer",
+          "revision": 1,
+          "state": "action_required",
+          "decision": "HUMAN_REVIEW_REQUIRED",
+          "created_at": "2026-10-09T16:00:01Z",
+          "updated_at": "2026-10-09T16:00:01Z",
+          "status_uri": "https://admission.marketplace.example/admission-requests/adm_transfer_01",
+          "poll_after": 60,
+          "reasons": [
+            {
+              "code": "account_admin_approval_required",
+              "detail": "An administrator for Merchant 3099 must approve enabling transfer initiation before provider review.",
+              "retryable": true,
+              "remediation": "Ask a Merchant 3099 administrator to open the provider interaction."
+            }
+          ],
+          "actions": [
+            {
+              "action_id": "urn:example:action:transfer-admin-approval-01",
+              "type": "urn:example:action:provider-account-approval",
+              "actor": "requester_administrator",
+              "status": "open",
+              "description": "A Merchant 3099 administrator must authenticate to Marketplace and approve this capability request.",
+              "consequence": "Approval permits provider review of money.transfer access for the named client; it does not authorize any transfer.",
+              "expires_at": "2026-10-10T16:00:01Z",
+              "interaction_uri": "https://accounts.marketplace.example/approvals/apr_transfer_01"
+            }
+          ],
+          "evidence_assessments": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1301",
+              "type": "urn:example:evidence:regulated-business",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T16:00:01Z",
+              "issuer": "https://regulator.example.net",
+              "fresh_until": "2026-10-15T16:00:01Z"
+            }
+          ],
+          "provisioning": []
+        }
+      }
+    },
+    {
+      "note": "The agent presents the action to an authenticated administrator. The provider UI, not the agent, captures approval.",
+      "request": {
+        "method": "POST",
+        "url": "https://admission.marketplace.example/admission-requests/adm_transfer_01/actions/urn%3Aexample%3Aaction%3Atransfer-admin-approval-01",
+        "headers": { "Idempotency-Key": "provider-ui-approval-5eaa1972", "Authorization": "(administrator session; value omitted)" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/action-submission.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_transfer_01",
+          "action_id": "urn:example:action:transfer-admin-approval-01",
+          "result": "approved",
+          "completed_at": "2026-10-09T16:07:00Z",
+          "outputs": { "approval_record": "urn:example:provider-approval:approval-7301" }
+        }
+      },
+      "response": {
+        "status": 202,
+        "headers": { "ETag": "\"rev-2\"", "Retry-After": "300" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_transfer_01",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0301",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "money.transfer",
+          "revision": 2,
+          "state": "pending",
+          "decision": "HUMAN_REVIEW_REQUIRED",
+          "created_at": "2026-10-09T16:00:01Z",
+          "updated_at": "2026-10-09T16:07:01Z",
+          "status_uri": "https://admission.marketplace.example/admission-requests/adm_transfer_01",
+          "poll_after": 300,
+          "reasons": [
+            { "code": "provider_review_pending", "detail": "Administrator approval is recorded; provider compliance review is queued.", "retryable": true }
+          ],
+          "actions": [
+            {
+              "action_id": "urn:example:action:transfer-admin-approval-01",
+              "type": "urn:example:action:provider-account-approval",
+              "actor": "requester_administrator",
+              "status": "completed",
+              "description": "Merchant administrator approval is recorded.",
+              "consequence": "Provider compliance review may proceed; no transfer is authorized.",
+              "expires_at": "2026-10-10T16:00:01Z"
+            },
+            {
+              "action_id": "urn:example:action:transfer-provider-review-01",
+              "type": "urn:example:action:provider-review",
+              "actor": "provider_reviewer",
+              "status": "in_progress",
+              "description": "Marketplace compliance is reviewing the request.",
+              "consequence": "The provider will approve or deny capability admission.",
+              "expires_at": "2026-10-16T16:07:01Z"
+            }
+          ],
+          "evidence_assessments": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1301",
+              "type": "urn:example:evidence:regulated-business",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T16:00:01Z",
+              "issuer": "https://regulator.example.net",
+              "fresh_until": "2026-10-15T16:00:01Z"
+            },
+            {
+              "evidence_id": "urn:example:provider-approval:approval-7301",
+              "type": "urn:example:evidence:organization-approval",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T16:07:01Z",
+              "issuer": "https://accounts.marketplace.example"
+            }
+          ],
+          "provisioning": []
+        }
+      }
+    },
+    {
+      "note": "The client resumes after the requested interval using a conditional GET.",
+      "request": {
+        "method": "GET",
+        "url": "https://admission.marketplace.example/admission-requests/adm_transfer_01",
+        "headers": { "If-None-Match": "\"rev-2\"" }
+      },
+      "response": { "status": 304, "headers": { "ETag": "\"rev-2\"", "Retry-After": "300" } }
+    },
+    {
+      "note": "A later poll returns the completed review. Admission enables only the capability; each transfer still needs separate authorization and runtime policy.",
+      "request": { "method": "GET", "url": "https://admission.marketplace.example/admission-requests/adm_transfer_01", "headers": { "If-None-Match": "\"rev-2\"" } },
+      "response": {
+        "status": 200,
+        "headers": { "ETag": "\"rev-3\"" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_transfer_01",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0301",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "money.transfer",
+          "revision": 3,
+          "state": "approved",
+          "decision": "ALLOW",
+          "created_at": "2026-10-09T16:00:01Z",
+          "updated_at": "2026-10-10T14:00:00Z",
+          "expires_at": "2026-10-17T14:00:00Z",
+          "status_uri": "https://admission.marketplace.example/admission-requests/adm_transfer_01",
+          "reasons": [
+            { "code": "review_approved", "detail": "Administrator approval and provider compliance review are complete.", "retryable": false }
+          ],
+          "actions": [
+            {
+              "action_id": "urn:example:action:transfer-admin-approval-01",
+              "type": "urn:example:action:provider-account-approval",
+              "actor": "requester_administrator",
+              "status": "completed",
+              "description": "Merchant administrator approval is recorded.",
+              "consequence": "Provider review was permitted; no individual transfer was authorized.",
+              "expires_at": "2026-10-10T16:00:01Z"
+            },
+            {
+              "action_id": "urn:example:action:transfer-provider-review-01",
+              "type": "urn:example:action:provider-review",
+              "actor": "provider_reviewer",
+              "status": "completed",
+              "description": "Marketplace compliance approved capability admission.",
+              "consequence": "OAuth provisioning may proceed; runtime transfer controls still apply.",
+              "expires_at": "2026-10-16T16:07:01Z"
+            }
+          ],
+          "evidence_assessments": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1301",
+              "type": "urn:example:evidence:regulated-business",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T16:00:01Z",
+              "issuer": "https://regulator.example.net",
+              "fresh_until": "2026-10-15T16:00:01Z"
+            },
+            {
+              "evidence_id": "urn:example:provider-approval:approval-7301",
+              "type": "urn:example:evidence:organization-approval",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T16:07:01Z",
+              "issuer": "https://accounts.marketplace.example"
+            }
+          ],
+          "provisioning": [
+            {
+              "protocol": "oauth2",
+              "mode": "manual",
+              "authorization_server": "https://auth.marketplace.example",
+              "resource": "https://api.marketplace.example",
+              "scopes": ["money.transfer"],
+              "grant_types": ["authorization_code"],
+              "client_id": "mnaa-transfer-reviewed-client"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

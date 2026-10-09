@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json",
+  "title": "MNAA admission status",
+  "type": "object",
+  "required": [
+    "$schema",
+    "spec_version",
+    "admission_id",
+    "request_id",
+    "resource",
+    "environment",
+    "capability",
+    "revision",
+    "state",
+    "created_at",
+    "updated_at",
+    "status_uri",
+    "reasons",
+    "actions",
+    "evidence_assessments",
+    "provisioning"
+  ],
+  "properties": {
+    "$schema": { "const": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json" },
+    "spec_version": { "const": "0.1" },
+    "admission_id": { "type": "string", "format": "uri" },
+    "request_id": { "type": "string", "format": "uri" },
+    "resource": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "environment": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+    "capability": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+$" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "state": { "enum": ["pending", "action_required", "approved", "denied", "expired", "revoked", "cancelled"] },
+    "decision": { "enum": ["ALLOW", "STEP_UP", "HUMAN_REVIEW_REQUIRED", "DENY"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "status_uri": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "poll_after": { "type": "integer", "minimum": 1 },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "detail", "retryable"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]+$" },
+          "detail": { "type": "string", "minLength": 1 },
+          "retryable": { "type": "boolean" },
+          "retry_after": { "type": "string", "format": "date-time" },
+          "remediation": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action_id", "type", "actor", "status", "description", "consequence", "expires_at"],
+        "properties": {
+          "action_id": { "type": "string", "format": "uri" },
+          "type": { "type": "string", "format": "uri" },
+          "actor": { "enum": ["client_instance", "requester_administrator", "represented_party", "provider_reviewer"] },
+          "status": { "enum": ["open", "in_progress", "completed", "declined", "expired", "cancelled"] },
+          "description": { "type": "string", "minLength": 1 },
+          "consequence": { "type": "string", "minLength": 1 },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "interaction_uri": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "challenge": { "type": "string", "minLength": 16, "maxLength": 512 },
+          "input_schema": { "type": "string", "format": "uri" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "evidence_assessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["evidence_id", "type", "verification", "assessed_at"],
+        "properties": {
+          "evidence_id": { "type": "string", "format": "uri" },
+          "type": { "type": "string", "format": "uri" },
+          "verification": { "enum": ["verified", "failed", "unverified", "stale", "not_applicable"] },
+          "assessed_at": { "type": "string", "format": "date-time" },
+          "issuer": { "type": "string", "format": "uri" },
+          "fresh_until": { "type": "string", "format": "date-time" },
+          "reason_code": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]+$" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "provisioning": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["protocol", "mode", "resource"],
+        "properties": {
+          "protocol": { "enum": ["oauth2", "api_key", "other"] },
+          "mode": { "enum": ["pre_registered", "client_id_metadata_document", "dynamic_client_registration", "manual"] },
+          "authorization_server": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "registration_endpoint": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "resource": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "scopes": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "grant_types": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "client_id": { "type": "string", "minLength": 1 },
+          "credential_reference": {
+            "type": "object",
+            "required": ["handle", "expires_at"],
+            "properties": {
+              "handle": { "type": "string", "format": "uri" },
+              "expires_at": { "type": "string", "format": "date-time" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "revocation": {
+      "type": "object",
+      "required": ["revoked_at", "reason_code", "enforcement_status"],
+      "properties": {
+        "revoked_at": { "type": "string", "format": "date-time" },
+        "reason_code": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]+$" },
+        "enforcement_status": { "enum": ["pending", "complete", "failed"] }
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "state": { "const": "approved" } }, "required": ["state"] },
+      "then": {
+        "properties": {
+          "decision": { "const": "ALLOW" },
+          "provisioning": { "type": "array", "minItems": 1 },
+          "expires_at": {}
+        },
+        "required": ["decision", "expires_at"]
+      }
+    },
+    {
+      "if": { "properties": { "state": { "const": "denied" } }, "required": ["state"] },
+      "then": {
+        "properties": {
+          "decision": { "const": "DENY" },
+          "reasons": { "type": "array", "minItems": 1 },
+          "provisioning": { "type": "array", "maxItems": 0 }
+        },
+        "required": ["decision"]
+      }
+    },
+    {
+      "if": { "properties": { "state": { "const": "action_required" } }, "required": ["state"] },
+      "then": {
+        "properties": {
+          "decision": { "enum": ["STEP_UP", "HUMAN_REVIEW_REQUIRED"] },
+          "actions": { "type": "array", "minItems": 1 },
+          "provisioning": { "type": "array", "maxItems": 0 },
+          "poll_after": {}
+        },
+        "required": ["decision", "poll_after"]
+      }
+    },
+    {
+      "if": { "properties": { "state": { "const": "pending" } }, "required": ["state"] },
+      "then": {
+        "properties": { "provisioning": { "type": "array", "maxItems": 0 }, "poll_after": {} },
+        "required": ["poll_after"]
+      }
+    },
+    {
+      "if": { "properties": { "state": { "const": "revoked" } }, "required": ["state"] },
+      "then": { "properties": { "revocation": {} }, "required": ["revocation"] }
+    }
+  ],
+  "additionalProperties": true
+}

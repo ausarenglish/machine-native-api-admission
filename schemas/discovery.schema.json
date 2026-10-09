@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.example.org/mnaa/0.1/schemas/discovery.schema.json",
+  "title": "MNAA discovery document",
+  "type": "object",
+  "required": [
+    "$schema",
+    "spec_version",
+    "issuer",
+    "resource",
+    "admission_requests_endpoint",
+    "readiness_endpoint",
+    "idempotency_ttl",
+    "capabilities"
+  ],
+  "properties": {
+    "$schema": { "const": "https://spec.example.org/mnaa/0.1/schemas/discovery.schema.json" },
+    "spec_version": { "const": "0.1" },
+    "issuer": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "resource": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "admission_requests_endpoint": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "readiness_endpoint": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "idempotency_ttl": { "type": "integer", "minimum": 86400 },
+    "retention_policy_uri": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "environments", "evidence_requirements", "authorization", "readiness_check"],
+        "properties": {
+          "id": { "$ref": "#/$defs/capability" },
+          "description": { "type": "string", "minLength": 1 },
+          "environments": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/environment" }
+          },
+          "evidence_requirements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "requirement", "accepted_formats"],
+              "properties": {
+                "type": { "type": "string", "format": "uri" },
+                "requirement": { "enum": ["always", "conditional"] },
+                "accepted_formats": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "max_age": { "type": "integer", "minimum": 0 },
+                "description": { "type": "string" }
+              },
+              "additionalProperties": true
+            }
+          },
+          "authorization": { "$ref": "#/$defs/authorization" },
+          "readiness_check": { "type": "string", "format": "uri" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "capability": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+$" },
+    "environment": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+    "authorization": {
+      "type": "object",
+      "required": ["protocol"],
+      "properties": {
+        "protocol": { "enum": ["oauth2", "none", "other"] },
+        "authorization_servers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "format": "uri", "pattern": "^https://" }
+        },
+        "scopes": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "grant_types": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "registration_modes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["pre_registered", "client_id_metadata_document", "dynamic_client_registration", "manual"] }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

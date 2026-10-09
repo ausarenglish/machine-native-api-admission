@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.example.org/mnaa/0.1/schemas/admission-request.schema.json",
+  "title": "MNAA admission request",
+  "type": "object",
+  "required": [
+    "$schema",
+    "spec_version",
+    "request_id",
+    "resource",
+    "environment",
+    "capability",
+    "requester",
+    "client_instance",
+    "authorization",
+    "claims",
+    "evidence"
+  ],
+  "properties": {
+    "$schema": { "const": "https://spec.example.org/mnaa/0.1/schemas/admission-request.schema.json" },
+    "spec_version": { "const": "0.1" },
+    "request_id": { "type": "string", "format": "uri" },
+    "resource": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "environment": { "$ref": "#/$defs/environment" },
+    "capability": { "$ref": "#/$defs/capability" },
+    "requester": { "$ref": "#/$defs/principal" },
+    "client_instance": {
+      "allOf": [
+        { "$ref": "#/$defs/principal" },
+        {
+          "type": "object",
+          "properties": {
+            "key_binding": { "type": "string", "minLength": 8, "maxLength": 512 }
+          }
+        }
+      ]
+    },
+    "represented_party": { "$ref": "#/$defs/principal" },
+    "authorization": {
+      "type": "object",
+      "required": ["protocol"],
+      "properties": {
+        "protocol": { "enum": ["oauth2", "none", "other"] },
+        "scopes": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "grant_types": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "authorization_details": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": true
+    },
+    "claims": {
+      "type": "object",
+      "description": "Self-asserted facts; presence does not imply verification."
+    },
+    "evidence": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/evidence" }
+    }
+  },
+  "$defs": {
+    "capability": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+$" },
+    "environment": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+    "principal": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "enum": ["organization", "person", "workload", "software", "account"] },
+        "id": { "type": "string", "format": "uri" },
+        "display_name": { "type": "string", "maxLength": 200 }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["evidence_id", "type", "format", "subject", "issuer", "issued_at"],
+      "properties": {
+        "evidence_id": { "type": "string", "format": "uri" },
+        "type": { "type": "string", "format": "uri" },
+        "format": { "type": "string", "minLength": 1 },
+        "subject": { "type": "string", "format": "uri" },
+        "issuer": { "type": "string", "format": "uri" },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "presentation": { "type": "object" },
+        "reference": {
+          "type": "object",
+          "required": ["uri", "digest"],
+          "properties": {
+            "uri": { "type": "string", "format": "uri" },
+            "digest": { "type": "string", "pattern": "^sha-256:[A-Za-z0-9_-]{43}$" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "oneOf": [
+        { "required": ["presentation"], "properties": { "presentation": {}, "reference": false } },
+        { "required": ["reference"], "properties": { "reference": {}, "presentation": false } }
+      ],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

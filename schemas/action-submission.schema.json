@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.example.org/mnaa/0.1/schemas/action-submission.schema.json",
+  "title": "MNAA action submission",
+  "type": "object",
+  "required": ["$schema", "spec_version", "admission_id", "action_id", "result", "completed_at"],
+  "properties": {
+    "$schema": { "const": "https://spec.example.org/mnaa/0.1/schemas/action-submission.schema.json" },
+    "spec_version": { "const": "0.1" },
+    "admission_id": { "type": "string", "format": "uri" },
+    "action_id": { "type": "string", "format": "uri" },
+    "result": { "enum": ["completed", "approved", "declined", "unable_to_complete"] },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "challenge": { "type": "string", "minLength": 16, "maxLength": 512 },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["evidence_id", "type", "format", "subject", "issuer", "issued_at", "presentation"],
+        "properties": {
+          "evidence_id": { "type": "string", "format": "uri" },
+          "type": { "type": "string", "format": "uri" },
+          "format": { "type": "string", "minLength": 1 },
+          "subject": { "type": "string", "format": "uri" },
+          "issuer": { "type": "string", "format": "uri" },
+          "issued_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "presentation": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "outputs": { "type": "object" }
+  },
+  "additionalProperties": true
+}

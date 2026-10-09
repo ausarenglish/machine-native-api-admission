@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.example.org/mnaa/0.1/schemas/readiness-response.schema.json",
+  "title": "MNAA readiness response",
+  "type": "object",
+  "required": ["$schema", "spec_version", "admission_id", "resource", "environment", "capability", "ready", "checked_at", "valid_until", "checks"],
+  "properties": {
+    "$schema": { "const": "https://spec.example.org/mnaa/0.1/schemas/readiness-response.schema.json" },
+    "spec_version": { "const": "0.1" },
+    "admission_id": { "type": "string", "format": "uri" },
+    "resource": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "environment": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+    "capability": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+$" },
+    "ready": { "type": "boolean" },
+    "checked_at": { "type": "string", "format": "date-time" },
+    "valid_until": { "type": "string", "format": "date-time" },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": { "enum": ["admission", "provisioning", "authorization", "credential", "provider_enablement", "policy"] },
+          "status": { "enum": ["pass", "fail", "not_applicable", "unknown"] },
+          "code": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]+$" },
+          "detail": { "type": "string" },
+          "remediation": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

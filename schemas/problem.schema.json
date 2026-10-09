@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.example.org/mnaa/0.1/schemas/problem.schema.json",
+  "title": "MNAA problem details",
+  "type": "object",
+  "required": ["$schema", "type", "title", "status", "code"],
+  "properties": {
+    "$schema": { "const": "https://spec.example.org/mnaa/0.1/schemas/problem.schema.json" },
+    "type": { "type": "string", "format": "uri" },
+    "title": { "type": "string", "minLength": 1 },
+    "status": { "type": "integer", "minimum": 400, "maximum": 599 },
+    "detail": { "type": "string" },
+    "instance": { "type": "string", "format": "uri" },
+    "code": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]+$" },
+    "retry_after": { "type": "integer", "minimum": 1 }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,118 @@
+{
+  "scenario": "Approved listing admission is revoked; existing credential does not make it ready",
+  "illustrative": true,
+  "exchanges": [
+    {
+      "note": "A provider security event revokes the previously approved listing admission and disables its entitlement. The last policy decision remains historical ALLOW.",
+      "request": {
+        "method": "GET",
+        "url": "https://admission.marketplace.example/admission-requests/adm_listing_01",
+        "headers": { "If-None-Match": "\"rev-2\"" }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "ETag": "\"rev-3\"" },
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/admission-status.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_listing_01",
+          "request_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d0201",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "listing.create",
+          "revision": 3,
+          "state": "revoked",
+          "decision": "ALLOW",
+          "created_at": "2026-10-09T15:00:01Z",
+          "updated_at": "2026-10-10T18:00:00Z",
+          "expires_at": "2026-11-08T15:02:01Z",
+          "status_uri": "https://admission.marketplace.example/admission-requests/adm_listing_01",
+          "reasons": [
+            {
+              "code": "client_key_compromise_reported",
+              "detail": "The admitted client key was reported compromised and access was disabled.",
+              "retryable": true,
+              "remediation": "Rotate the client key, revoke related OAuth credentials, and create a new admission request with fresh evidence."
+            }
+          ],
+          "actions": [],
+          "evidence_assessments": [
+            {
+              "evidence_id": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1202",
+              "type": "urn:example:evidence:organization-control",
+              "verification": "verified",
+              "assessed_at": "2026-10-09T15:02:01Z",
+              "issuer": "https://organizations.example.net",
+              "fresh_until": "2026-10-10T15:01:30Z"
+            }
+          ],
+          "provisioning": [],
+          "revocation": {
+            "revoked_at": "2026-10-10T18:00:00Z",
+            "reason_code": "client_key_compromise_reported",
+            "enforcement_status": "complete"
+          }
+        }
+      }
+    },
+    {
+      "note": "The client still has an unexpired access token, but readiness uses authoritative admission and provider state.",
+      "request": {
+        "method": "POST",
+        "url": "https://admission.marketplace.example/readiness-validations",
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/readiness-request.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_listing_01",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "listing.create",
+          "client_id": "mnaa-listing-demo-client"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/readiness-response.schema.json",
+          "spec_version": "0.1",
+          "admission_id": "urn:example:admission:adm_listing_01",
+          "resource": "https://api.marketplace.example",
+          "environment": "production",
+          "capability": "listing.create",
+          "ready": false,
+          "checked_at": "2026-10-10T18:00:05Z",
+          "valid_until": "2026-10-10T18:01:05Z",
+          "checks": [
+            { "name": "admission", "status": "fail", "code": "admission_revoked", "detail": "Admission is revoked.", "remediation": "Rotate the compromised key and create a new request." },
+            { "name": "provisioning", "status": "fail", "code": "entitlement_disabled" },
+            { "name": "authorization", "status": "pass", "detail": "Historical seller consent is not sufficient after admission revocation." },
+            { "name": "credential", "status": "fail", "code": "client_disabled" },
+            { "name": "provider_enablement", "status": "fail", "code": "capability_disabled" },
+            { "name": "policy", "status": "fail", "code": "security_hold" }
+          ]
+        }
+      }
+    },
+    {
+      "note": "The resource server independently enforces current admission state. The access token's remaining lifetime does not override revocation.",
+      "request": {
+        "method": "POST",
+        "url": "https://api.marketplace.example/listings",
+        "headers": { "Authorization": "(previously issued access token omitted)" },
+        "body": { "title": "Illustrative item; no listing is created" }
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "$schema": "https://spec.example.org/mnaa/0.1/schemas/problem.schema.json",
+          "type": "https://spec.example.org/mnaa/problems/admission-revoked",
+          "title": "Capability admission revoked",
+          "status": 403,
+          "detail": "listing.create is disabled for this admitted client.",
+          "instance": "urn:uuid:018f61f0-7841-7b20-a879-a44f7a0d1501",
+          "code": "admission_revoked"
+        }
+      }
+    }
+  ]
+}
